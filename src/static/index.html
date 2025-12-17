@@ -19,6 +19,22 @@
           <!-- Activities will be loaded here -->
           <p>Loading activities...</p>
         </div>
+
+        <!-- Template for activity cards (client JS can clone and populate .participants-list) -->
+        <template id="activity-card-template">
+          <div class="activity-card">
+            <h4 class="activity-title"><!-- title --></h4>
+            <p class="activity-desc"><!-- description --></p>
+            <p class="activity-schedule"><strong>Schedule:</strong> <!-- schedule --></p>
+            <div class="participants">
+              <h5>Participants</h5>
+              <ul class="participants-list">
+                <!-- populated with <li class="participant-item"><span class="participant-badge">email</span></li> -->
+              </ul>
+              <p class="no-participants hidden">No participants yet.</p>
+            </div>
+          </div>
+        </template>
       </section>
 
       <section id="signup-container">
