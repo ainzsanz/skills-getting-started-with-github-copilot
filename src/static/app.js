@@ -14,13 +14,62 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
 
-  function createParticipantItem(email) {
+  function createParticipantItem(email, activityName) {
     const li = document.createElement("li");
     li.className = "participant-item";
+
     const span = document.createElement("span");
     span.className = "participant-badge";
     span.textContent = email;
     li.appendChild(span);
+
+    // remove button
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "participant-remove";
+    btn.title = "Unregister participant";
+    btn.setAttribute("aria-label", `Unregister ${email}`);
+    btn.innerHTML = "✖";
+    btn.addEventListener("click", async () => {
+      if (!activityName) return;
+      try {
+        const res = await fetch(
+          `/activities/${encodeURIComponent(activityName)}/participants?email=${encodeURIComponent(email)}`,
+          { method: "DELETE" }
+        );
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          // remove from DOM
+          if (li.parentNode) li.parentNode.removeChild(li);
+          showMessage(data.message || `Unregistered ${email} from ${activityName}`, "info");
+
+          // update availability display
+          const card = findActivityCard(activityName);
+          if (card) {
+            const availEl = card.querySelector(".activity-availability");
+            if (availEl) {
+              const match = availEl.textContent.match(/(\d+)\s*spots/);
+              if (match) {
+                let n = Math.max(0, parseInt(match[1], 10) + 1);
+                availEl.innerHTML = `<strong>Availability:</strong> ${n} spots left`;
+              }
+            }
+            const participantsList = card.querySelector(".participants-list");
+            const noParticipants = card.querySelector(".no-participants");
+            if (participantsList && participantsList.children.length === 0 && noParticipants) {
+              noParticipants.classList.remove("hidden");
+            }
+          }
+        } else {
+          showMessage(data.detail || data.message || "Failed to unregister", "error");
+        }
+      } catch (err) {
+        console.error(err);
+        showMessage("Network error while unregistering.", "error");
+      }
+    });
+
+    li.appendChild(btn);
     return li;
   }
 
@@ -31,6 +80,11 @@ document.addEventListener("DOMContentLoaded", () => {
       option.textContent = name;
       activitySelect.appendChild(option);
     }
+  }
+
+  function findActivityCard(activityName) {
+    const cards = Array.from(document.querySelectorAll('.activity-card'));
+    return cards.find(c => c.dataset && c.dataset.activity === activityName) || null;
   }
 
   function renderActivities(activities) {
@@ -68,7 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (participantsList) {
           clear(participantsList);
           if (Array.isArray(details.participants) && details.participants.length) {
-            details.participants.forEach(p => participantsList.appendChild(createParticipantItem(p)));
+            details.participants.forEach(p => participantsList.appendChild(createParticipantItem(p, name)));
             if (noParticipants) noParticipants.classList.add("hidden");
           } else {
             if (noParticipants) noParticipants.classList.remove("hidden");
@@ -98,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const ul = document.createElement("ul");
         ul.className = "participants-list";
         if (Array.isArray(details.participants) && details.participants.length) {
-          details.participants.forEach(p => ul.appendChild(createParticipantItem(p)));
+          details.participants.forEach(p => ul.appendChild(createParticipantItem(p, name)));
           const noP = document.createElement("p");
           noP.className = "no-participants hidden";
           noP.textContent = "No participants yet.";
@@ -132,14 +186,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function addParticipantToCard(activityName, email) {
-    const selector = (typeof CSS !== "undefined" && CSS.escape)
-      ? `.activity-card[data-activity="${CSS.escape(activityName)}"]`
-      : `.activity-card[data-activity="${activityName.replace(/"/g, '\\"')}"]`;
-    const card = document.querySelector(selector);
+    const card = findActivityCard(activityName);
     if (!card) return;
     const participantsList = card.querySelector(".participants-list");
     const noParticipants = card.querySelector(".no-participants");
-    if (participantsList) participantsList.appendChild(createParticipantItem(email));
+    if (participantsList) participantsList.appendChild(createParticipantItem(email, activityName));
     if (noParticipants) noParticipants.classList.add("hidden");
 
     const availEl = card.querySelector(".activity-availability");

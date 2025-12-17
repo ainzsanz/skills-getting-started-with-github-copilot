@@ -146,8 +146,8 @@ button:hover {
 }
 
 .participants-list {
-  list-style: disc;
-  padding-left: 20px;
+  list-style: none;
+  padding-left: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -171,6 +171,21 @@ button:hover {
   border-radius: 16px;
   font-weight: 600;
   font-size: 13px;
+}
+
+.participant-remove {
+  background: transparent;
+  border: none;
+  color: #c62828;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 6px;
+  line-height: 1;
+  border-radius: 4px;
+}
+
+.participant-remove:hover {
+  background: rgba(198, 36, 36, 0.08);
 }
 
 .no-participants {
